@@ -6,12 +6,18 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
-import frc.robot.commands.ExampleCommand;
-import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.commands.IndexerMotor;
+import frc.robot.subsystems.IndexerSub;
+import frc.robot.commands.ShooterMotor;
+import frc.robot.subsystems.ShooterSub;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.Indexer;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.subsystems.VorTXController;
+import frc.robot.subsystems.AgitatorSub;
+import frc.robot.commands.AgitatorMotor;
 
+import edu.wpi.first.wpilibj2.command.RunCommand;
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
  * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
@@ -20,15 +26,41 @@ import frc.robot.subsystems.VorTXController;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
 
-  private final ExampleCommand m_autoCommand = new ExampleCommand(m_exampleSubsystem);
-
-
+  public static VorTXController con1 = new VorTXController(0);
+  public static JoystickButton circleButton = con1.circle;
+  public static JoystickButton triangleButton = con1.triangle;
+  public static IndexerSub indexersub = new IndexerSub(4);
+  public static IndexerMotor indexer = new IndexerMotor(indexersub);
+  public static ShooterSub shootersub = new ShooterSub(5, 6);
+  public static ShooterMotor shooter = new ShooterMotor(shootersub);
+  public static AgitatorSub agitatorsub = new AgitatorSub(7);
+  public static AgitatorMotor agitator = new AgitatorMotor(agitatorsub);
+  
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     // Configure the button bindings
     configureButtonBindings();
+    shootersub.setDefaultCommand(
+      new RunCommand(
+        shooter::stopMotor,
+        shootersub
+      )
+    );
+
+    indexersub.setDefaultCommand(
+      new RunCommand(
+        indexer::stopMotor,
+        indexersub
+      )
+    );
+    agitatorsub.setDefaultCommand(
+      new RunCommand(
+        agitator::stopMotor,
+        agitatorsub
+      )
+    );
+    
   }
 
   /**
@@ -36,19 +68,42 @@ public class RobotContainer {
    * instantiating a {@link GenericHID} or one of its subclasses ({@link
    * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-   */
+   */ 
   private void configureButtonBindings() {
-    
-  }
+    // index and shoot
+    circleButton.whenHeld(
+      new ParallelCommandGroup(
+        new RunCommand(
+          indexer::startMotor,
+          indexersub   
+        ),
+        new RunCommand(
+          shooter::startMotor,
+          shootersub
+        )
+      )
+    );
+    triangleButton.whenHeld(
+      new RunCommand(
+        agitator::startMotor,
+        agitatorsub
+      )
+    );
+
+
+  } 
+
+  // command groiup
+  //  c1
+  //  c2
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *
    * @return the command to run in autonomous
    */
-    
   public Command getAutonomousCommand() {
     // An ExampleCommand will run in autonomous
-    return m_autoCommand;
+    return indexer;
   }
 }
